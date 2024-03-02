@@ -24,7 +24,7 @@ jobs:
         run: |
           rsync -r -e "ssh -i /home/runner/.ssh/id_ed25519" ${{github.workspace}} testing@${{ secrets.OPENBSD_7_4_TESTING_HOST }}:~/
           ssh -i /home/runner/.ssh/id_ed25519 testing@${{ secrets.OPENBSD_7_4_TESTING_HOST }}
-          cd flare_server
+          cd ~/flare_server
           make
           rcctl enable flare_server
           rcctl restart flare_server
