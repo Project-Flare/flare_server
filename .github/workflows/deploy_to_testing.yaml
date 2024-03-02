@@ -12,6 +12,7 @@ jobs:
           SSH_HOST: ${{secrets.OPENBSD_7_4_TESTING_HOST}}
         run: |
           mkdir -p ~/.ssh/ \
+          touch ~/.ssh/known_hosts \
           echo "$SSH_PRIVATE_KEY" > ~/privkey \
           sudo chmod 600 ~/privkey \
           ssh-keyscan $SSH_HOST > ~/.ssh/known_hosts \
