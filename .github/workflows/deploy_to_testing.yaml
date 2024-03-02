@@ -11,11 +11,11 @@ jobs:
           SSH_PRIVATE_KEY: ${{secrets.secrets.OPENBSD_7_4_TESTING}}
           SSH_HOST: ${{secrets.OPENBSD_7_4_TESTING_HOST}}
         run: |
-          mkdir -p ~/.ssh/ \
-          touch ~/.ssh/known_hosts \
-          echo "$SSH_PRIVATE_KEY" > ~/privkey \
-          sudo chmod 600 ~/privkey \
-          ssh-keyscan $SSH_HOST > ~/.ssh/known_hosts \
+          mkdir -p /home/runner/.ssh/ \
+          touch /home/runner/.ssh/known_hosts \
+          echo "$SSH_PRIVATE_KEY" > /home/runner/privkey \
+          sudo chmod 600 /home/runner/privkey \
+          ssh-keyscan $SSH_HOST > /home/runner/.ssh/known_hosts \
       - name: Prepare dependencies
         run: |
           sudo apt install libwebsockets-dev \
@@ -26,4 +26,4 @@ jobs:
         env:
           SSH_HOST: ${{secrets.OPENBSD_7_4_TESTING_HOST}}
         run: |
-          scp -i ~/privkey target/flare_server testing@${{ secrets.OPENBSD_7_4_TESTING_HOST }}:~/ \
+          scp -i /home/runner/privkey target/flare_server testing@${{ secrets.OPENBSD_7_4_TESTING_HOST }}:~/ \
