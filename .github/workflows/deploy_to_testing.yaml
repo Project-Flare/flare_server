@@ -7,7 +7,7 @@ jobs:
     steps:
       - name: Build artifact
         run: >
-          apt install libwebsockets-dev
+          sudo apt install libwebsockets-dev
           make
       - name: Upload binary
         run: >
