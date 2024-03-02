@@ -5,15 +5,25 @@ jobs:
   Build-Deploy-Testing:
     runs-on: ubuntu-latest
     steps:
-      - name: Build artifact
+      - name: Create SSH key
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{secrets.secrets.OPENBSD_7_4_TESTING}}
+          SSH_HOST: ${{secrets.OPENBSD_7_4_TESTING_HOST}}
+        run: >
+          mkdir -p ~/.ssh/
+          echo "$SSH_PRIVATE_KEY" > ~/privkey
+          sudo chmod 600 ~/privkey
+          ssh-keyscan $SSH_HOST > ~/.ssh/known_hosts
+      - name: Prepare dependencies
         run: >
           sudo apt install libwebsockets-dev
-          make
-      - name: Upload binary
+      - name: Make
         run: >
-          mkdir -p ~/.ssh
-          touch ~/.ssh/known_hosts
-          ssh-keyscan ${{ secrets.OPENBSD_7_4_TESTING_HOST }} >> ~/.ssh/known_hosts
-          echo "${{ secrets.OPENBSD_7_4_TESTING }}" > ~/.ssh/privkey
-          chmod 600 ~/.ssh/privkey
-          scp -i ~/.ssh/privkey target/flare_server testing@${{ secrets.OPENBSD_7_4_TESTING_HOST }}:~/
+          make
+      - name: Upload
+        env:
+          SSH_HOST: ${{secrets.OPENBSD_7_4_TESTING_HOST}}
+        shell: bash
+        run: >
+          scp -i ~/privkey target/flare_server testing@${{ secrets.OPENBSD_7_4_TESTING_HOST }}:~/
