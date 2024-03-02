@@ -33,4 +33,4 @@ jobs:
           script: |
             cd ~/flare_server
             make
-            doas /usr/bin/rcctl restart flareserver
+            doas /usr/sbin/rcctl restart flareserver
