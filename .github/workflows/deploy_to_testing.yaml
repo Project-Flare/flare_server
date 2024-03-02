@@ -1,0 +1,12 @@
+name: Deploy to test server
+run-name: ${{ github.actor }} is testing deploying to test server
+on: [push]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build artifact
+        run: >
+          make
+          echo ${{ secrets.OPENBSD_7_4_TESTING }} > ssh_id
+          scp -i ssh_id target/flare_server testing@${{ secrets.OPENBSD_7_4_TESTING_HOST }}:~/
