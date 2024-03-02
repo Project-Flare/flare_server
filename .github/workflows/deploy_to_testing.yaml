@@ -13,7 +13,7 @@ jobs:
         run: |
           mkdir -p /home/runner/.ssh/
           touch /home/runner/.ssh/known_hosts
-          echo "$SSH_PRIVATE_KEY" > /home/runner/privkey
+          echo "$SSH_PRIVATE_KEY" > /home/runner/privkey \
           sudo chmod 600 /home/runner/privkey
           ssh-keyscan $SSH_HOST > /home/runner/.ssh/known_hosts
       - name: Prepare dependencies
@@ -21,9 +21,11 @@ jobs:
           sudo apt install libwebsockets-dev
       - name: Make
         run: |
+          cd ${{github.workspace}}
           make
       - name: Upload
         env:
           SSH_HOST: ${{secrets.OPENBSD_7_4_TESTING_HOST}}
         run: |
+          cd ${{github.workspace}}
           scp -i /home/runner/privkey target/flare_server testing@${{ secrets.OPENBSD_7_4_TESTING_HOST }}:~/
