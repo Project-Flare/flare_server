@@ -33,5 +33,4 @@ jobs:
           script: |
             cd ~/flare_server
             make
-            doas rcctl enable flareserver
-            doas rcctl restart flareserver
+            doas /usr/bin/rcctl restart flareserver
