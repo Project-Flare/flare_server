@@ -13,7 +13,7 @@ jobs:
         run: |
           mkdir -p /home/runner/.ssh/
           touch /home/runner/.ssh/known_hosts
-          echo "$SSH_PRIVATE_KEY" > /home/runner/privkey
+          echo $SSH_PRIVATE_KEY > /home/runner/privkey
           sudo chmod u=r,g=,o= /home/runner/privkey
           ssh-keyscan $SSH_HOST > /home/runner/.ssh/known_hosts
       - name: Prepare dependencies
