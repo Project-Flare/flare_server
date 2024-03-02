@@ -28,7 +28,7 @@ jobs:
         with:
           host: ${{ secrets.OPENBSD_7_4_TESTING_HOST }}
           username: testing
-          key_path: /home/runner/.ssh/id_ed25519
+          key: ${{ secrets.OPENBSD_7_4_TESTING }}
           port: 22
           script: |
             cd ~/flare_server
