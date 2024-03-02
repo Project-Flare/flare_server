@@ -8,12 +8,11 @@ jobs:
       - name: Create SSH key
         shell: bash
         env:
-          SSH_PRIVATE_KEY: ${{secrets.secrets.OPENBSD_7_4_TESTING}}
           SSH_HOST: ${{secrets.OPENBSD_7_4_TESTING_HOST}}
         run: |
           mkdir -p /home/runner/.ssh/
           touch /home/runner/.ssh/known_hosts
-          echo $SSH_PRIVATE_KEY > /home/runner/.ssh/id_ed25519
+          echo "${{ secrets.OPENBSD_7_4_TESTING }}" > /home/runner/.ssh/id_ed25519
           sudo chmod u=r,g=,o= /home/runner/.ssh/id_ed25519
           ssh-keygen -yf /home/runner/.ssh/id_ed25519
           ssh-keyscan $SSH_HOST > /home/runner/.ssh/known_hosts
