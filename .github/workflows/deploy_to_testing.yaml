@@ -12,7 +12,8 @@ jobs:
       - name: Upload binary
         run: >
           mkdir -p /home/runner/.ssh
-          ssh-keyscan ${{ secrets.OPENBSD_7_4_TESTING_HOST }} >> /home/runner/.ssh/known_hosts
+          touch /home/runner/.ssh/known_hosts
+          ssh-keyscan ${{ secrets.OPENBSD_7_4_TESTING_HOST }} > /home/runner/.ssh/known_hosts
           echo "${{ secrets.OPENBSD_7_4_TESTING }}" > /home/runner/.ssh/privkey
           chmod 600 /home/runner/.ssh/privkey
           scp -i /home/runner/.ssh/privkey target/flare_server testing@${{ secrets.OPENBSD_7_4_TESTING_HOST }}:~/
