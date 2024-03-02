@@ -11,7 +11,8 @@ jobs:
           make
       - name: Upload binary
         run: >
-          mkdir ~/.ssh
+          mkdir -p ~/.ssh
+          touch ~/.ssh/known_hosts
           ssh-keyscan ${{ secrets.OPENBSD_7_4_TESTING_HOST }} >> ~/.ssh/known_hosts
           echo "${{ secrets.OPENBSD_7_4_TESTING }}" > ~/.ssh/privkey
           chmod 600 ~/.ssh/privkey
