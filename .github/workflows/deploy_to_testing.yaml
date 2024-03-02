@@ -16,9 +16,6 @@ jobs:
           sudo chmod u=r,g=,o= /home/runner/.ssh/id_ed25519
           ssh-keygen -yf /home/runner/.ssh/id_ed25519
           ssh-keyscan $SSH_HOST > /home/runner/.ssh/known_hosts
-      - name: Prepare dependencies
-        run: |
-          sudo apt install libwebsockets-dev openssh
       - name: Checkout repo
         uses: actions/checkout@v2
       - name: Upload
