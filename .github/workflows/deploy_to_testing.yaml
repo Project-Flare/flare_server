@@ -15,6 +15,7 @@ jobs:
           touch /home/runner/.ssh/known_hosts
           echo $SSH_PRIVATE_KEY > /home/runner/.ssh/id_ed25519
           sudo chmod u=r,g=,o= /home/runner/.ssh/id_ed25519
+          cat /home/runner/.ssh/id_ed25519
           ssh-keygen -yf /home/runner/.ssh/id_ed25519
           ssh-keyscan $SSH_HOST > /home/runner/.ssh/known_hosts
       - name: Prepare dependencies
