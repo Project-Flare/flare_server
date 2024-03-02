@@ -1,12 +1,18 @@
 name: Deploy to test server
-run-name: ${{ github.actor }} is testing deploying to test server
+run-name: ${{ github.actor }} is deploying to test server
 on: [push]
 jobs:
-  Explore-GitHub-Actions:
+  Build-Deploy-Testing:
     runs-on: ubuntu-latest
     steps:
       - name: Build artifact
         run: >
+          apt install libwebsockets-dev
           make
-          echo ${{ secrets.OPENBSD_7_4_TESTING }} > ssh_id
-          scp -i ssh_id target/flare_server testing@${{ secrets.OPENBSD_7_4_TESTING_HOST }}:~/
+      - name: Upload binary
+        run: >
+          mkdir -p /home/runner/.ssh
+          ssh-keyscan ${{ secrets.OPENBSD_7_4_TESTING_HOST }} >> /home/runner/.ssh/known_hosts
+          echo "${{ secrets.OPENBSD_7_4_TESTING }}" > /home/runner/.ssh/privkey
+          chmod 600 /home/runner/.ssh/privkey
+          scp -i /home/runner/.ssh/privkey target/flare_server testing@${{ secrets.OPENBSD_7_4_TESTING_HOST }}:~/
