@@ -19,6 +19,8 @@ jobs:
       - name: Prepare dependencies
         run: |
           sudo apt install libwebsockets-dev
+      - name: Checkout repo
+        uses: actions/checkout@v2
       - name: Make
         run: |
           cd ${{github.workspace}}
