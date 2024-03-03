@@ -92,10 +92,6 @@ int main(int argc, char** argv) {
 
     mg_http_listen(&mgr, s_listen_on, fn, NULL);  // http listener bound to fn
 
-    if (pledge("stdio rpath", NULL) == -1) {
-        err(1,"pledge");
-    }
-
     for (;;) mg_mgr_poll(&mgr, 1000); // inf loop
 
     mg_mgr_free(&mgr);
