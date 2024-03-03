@@ -27,12 +27,12 @@ static void fn(struct mg_connection *c, int ev, void *ev_data) {
 }
 
 int main(int argc, char** argv) {
-    if (pledge("stdio inet", NULL) == -1) {
-        err(1,"pledge");
-    }
-
     if (mkdir(s_data_dir, 600) == -1) {
         err(1, "mkdir");
+    }
+
+    if (pledge("stdio inet", NULL) == -1) {
+        err(1,"pledge");
     }
 
     if (unveil(s_data_dir, "rw") == -1) {
