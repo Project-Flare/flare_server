@@ -22,7 +22,7 @@ bool tls_initialized = false;
 static void fn(struct mg_connection *c, int ev, void *ev_data) {
     if (ev == MG_EV_CONNECT && tls_initialized) {
         mg_tls_init(c, &tls_opts);
-    } else if (ev == MG_EV_ACCEPT) {
+    } else if (ev == MG_EV_HTTP_MSG) {
         struct mg_http_message *hm = (struct mg_http_message *) ev_data;
         if (mg_http_match_uri(hm, "/ws")) {
             mg_ws_upgrade(c, hm, NULL);
