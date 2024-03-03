@@ -1,0 +1,3 @@
+[submodule "shared_proto"]
+	path = shared_proto
+	url = https://github.com/Direct-Contact/shared_proto
