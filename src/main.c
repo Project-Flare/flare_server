@@ -20,27 +20,37 @@ struct mg_tls_opts tls_opts;
 bool tls_initialized = false;
 
 static void fn(struct mg_connection *c, int ev, void *ev_data) {
-    if (ev == MG_EV_ACCEPT && tls_initialized) {
+    if (ev == MG_EV_ACCEPT && tls_initialized && mg_url_is_ssl(s_listen_on)) {
         mg_tls_init(c, &tls_opts);
+    } else if (ev == MG_EV_TLS_HS) {
+        MG_INFO(("TLS handshake done! Sending EHLO again"));
+        mg_printf(c, "EHLO myname\r\n");
+    } else if (ev == MG_EV_HTTP_MSG) {
+        mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "%s\n", "hello from flare");
     }
+
+    // if (ev == MG_EV_OPEN) {
+    //     printf("open conn.");
+    // } else if (ev == MG_EV_READ) {
+    // }
     
-    if (ev == MG_EV_HTTP_MSG) {
-        struct mg_http_message *hm = (struct mg_http_message *) ev_data;
-        if (mg_http_match_uri(hm, "/ws")) {
-            mg_ws_upgrade(c, hm, NULL);
-        } else if (mg_http_match_uri(hm, "/test")) {
-            struct mg_http_serve_opts opts = {
-                .mime_types = "html=text/html",
-            };
-            mg_http_serve_file(c, ev_data, "./flare_data/test.html", &opts);
-        } else {
-            mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "%s\n", "hello from flare");
-        }
-    } else if (ev == MG_EV_WS_MSG) {
-        // got websocket frame, rec data in wm->data. echo.
-        struct mg_ws_message *wm = (struct mg_ws_message *) ev_data;
-        mg_ws_send(c, wm->data.ptr, wm->data.len, WEBSOCKET_OP_TEXT);
-    }
+    // if (ev == MG_EV_HTTP_MSG) {
+    //     struct mg_http_message *hm = (struct mg_http_message *) ev_data;
+    //     if (mg_http_match_uri(hm, "/ws")) {
+    //         mg_ws_upgrade(c, hm, NULL);
+    //     } else if (mg_http_match_uri(hm, "/test")) {
+    //         struct mg_http_serve_opts opts = {
+    //             .mime_types = "html=text/html",
+    //         };
+    //         mg_http_serve_file(c, ev_data, "./flare_data/test.html", &opts);
+    //     } else {
+    //         mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "%s\n", "hello from flare");
+    //     }
+    // } else if (ev == MG_EV_WS_MSG) {
+    //     // got websocket frame, rec data in wm->data. echo.
+    //     struct mg_ws_message *wm = (struct mg_ws_message *) ev_data;
+    //     mg_ws_send(c, wm->data.ptr, wm->data.len, WEBSOCKET_OP_TEXT);
+    // }
 }
 
 char* concat(const char *str_1, const char *str_2)
