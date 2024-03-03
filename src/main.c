@@ -1,11 +1,14 @@
+#include <sys/stat.h>
 #include <unistd.h>
 #include <err.h>
 
 #include "mongoose.h"
 
 int pledge(const char *promises, const char *execpromises);
+int unveil(const char *path, const char *permissions);
 
-static const char *s_listen_on = "http://0.0.0.0:8000";
+static const char *s_listen_on = "ws://0.0.0.0:8000";
+static const char *s_data_dir = "./flare_server_data";
 
 static void fn(struct mg_connection *c, int ev, void *ev_data) {
     if (ev == MG_EV_HTTP_MSG) {
@@ -22,9 +25,17 @@ static void fn(struct mg_connection *c, int ev, void *ev_data) {
     }
 }
 
-int main(void) {
+int main(int argc, char** argv) {
     if (pledge("stdio inet", NULL) == -1) {
         err(1,"pledge");
+    }
+
+    if (mkdir(s_data_dir, 600) == -1) {
+        err(1, "mkdir");
+    }
+
+    if (unveil(s_data_dir, "rw") == -1) {
+        err(1, "unveil");
     }
 
     struct mg_mgr mgr;  // event mgr
