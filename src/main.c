@@ -17,6 +17,11 @@ static void fn(struct mg_connection *c, int ev, void *ev_data) {
         struct mg_http_message *hm = (struct mg_http_message *) ev_data;
         if (mg_http_match_uri(hm, "/ws")) {
             mg_ws_upgrade(c, hm, NULL);
+        } else if (mg_http_match_uri(hm, "/test")) {
+            struct mg_http_serve_opts opts = {
+                .mime_types = "html=text/html",
+            };
+            mg_http_serve_file(c, ev_data, "./flare_server_data/test.html", &opts);
         } else {
             mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "%s\n", "hello from flare");
         }
