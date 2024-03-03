@@ -1,3 +1,4 @@
 #!/bin/sh
 
-openssl req -nodes -new -x509 -newkey ed25519 -keyout key.pem -out cert.pem
+openssl ecparam -name prime256v1 -genkey -noout -out key.pem
+openssl req -new -key key.pem -x509 -nodes -out cert.pem
