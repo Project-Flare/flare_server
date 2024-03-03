@@ -20,6 +20,8 @@ struct mg_tls_opts opts;
 
 static void fn(struct mg_connection *c, int ev, void *ev_data) {
   if (ev == MG_EV_ACCEPT && c->fn_data != NULL) {
+    printf("pkey: \n%s\n", opts.key.ptr);
+    printf("cert: \n%s\n", opts.cert.ptr);
     mg_tls_init(c, &opts);
   }
   if (ev == MG_EV_HTTP_MSG) {
