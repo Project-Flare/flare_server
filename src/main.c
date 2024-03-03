@@ -10,7 +10,7 @@
 int pledge(const char *promises, const char *execpromises);
 int unveil(const char *path, const char *permissions);
 
-static const char *s_listen_on = "ws://0.0.0.0:8000";
+static const char *s_listen_on = "https://0.0.0.0:8443";
 
 static const char *s_base_dir = "./flare_data";
 static const char *s_cert_path = "./flare_data/cert.pem";
@@ -20,9 +20,11 @@ struct mg_tls_opts tls_opts;
 bool tls_initialized = false;
 
 static void fn(struct mg_connection *c, int ev, void *ev_data) {
-    if (ev == MG_EV_CONNECT && tls_initialized) {
+    if (ev == MG_EV_ACCEPT && tls_initialized) {
         mg_tls_init(c, &tls_opts);
-    } else if (ev == MG_EV_HTTP_MSG) {
+    }
+    
+    if (ev == MG_EV_HTTP_MSG) {
         struct mg_http_message *hm = (struct mg_http_message *) ev_data;
         if (mg_http_match_uri(hm, "/ws")) {
             mg_ws_upgrade(c, hm, NULL);
@@ -63,8 +65,8 @@ int main(int argc, char** argv) {
     tls_opts.key = privkey_data;
     tls_initialized = cert_data.len > 0 && privkey_data.len > 0;
 
-    printf("pk: %s\n", privkey_data.ptr);
-    printf("crt: %s\n", cert_data.ptr);
+    printf("pk: %s\n", tls_opts.key.ptr);
+    printf("crt: %s\n", tls_opts.cert.ptr);
 
     if (unveil(s_base_dir, "rw") == -1) {
         err(1, "unveil");
@@ -75,11 +77,13 @@ int main(int argc, char** argv) {
     }
 
     struct mg_mgr mgr;  // event mgr
+
+    mg_log_set(MG_LL_DEBUG);
     mg_mgr_init(&mgr);  // init event mgr
 
     printf("starting listener...");
 
-    mg_http_listen(&mgr, s_listen_on, fn, NULL);  // http listener bound to fn
+    mg_http_listen(&mgr, s_listen_on, fn, (void *) 1);  // http listener bound to fn
 
     for (;;) mg_mgr_poll(&mgr, 1000); // inf loop
 
