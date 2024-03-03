@@ -54,13 +54,13 @@ int main(int argc, char** argv) {
     int mkdir_res = mkdir(s_data_dir, 600);
     if (mkdir_res != 0)
         mkdir_err();
-    
-    if (pledge("stdio inet", NULL) == -1) {
-        err(1,"pledge");
-    }
 
     if (unveil(s_data_dir, "rw") == -1) {
         err(1, "unveil");
+    }
+    
+    if (pledge("stdio inet", NULL) == -1) {
+        err(1,"pledge");
     }
 
     struct mg_mgr mgr;  // event mgr
