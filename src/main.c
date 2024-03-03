@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
         err(1, "unveil");
     }
     
-    if (pledge("stdio inet", NULL) == -1) {
+    if (pledge("stdio inet rpath", NULL) == -1) {
         err(1,"pledge");
     }
 
