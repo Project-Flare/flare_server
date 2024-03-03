@@ -16,12 +16,16 @@ static const char *s_base_dir = "./flare_data";
 static const char *s_cert_path = "./flare_data/cert.pem";
 static const char *s_key_path = "./flare_data/key.pem";
 
-struct mg_tls_opts tls_opts;
-bool tls_initialized = false;
-
 static void fn(struct mg_connection *c, int ev, void *ev_data) {
-    if (ev == MG_EV_ACCEPT && tls_initialized && mg_url_is_ssl(s_listen_on)) {
-        mg_tls_init(c, &tls_opts);
+    if (ev == MG_EV_ACCEPT && mg_url_is_ssl(s_listen_on)) {
+        struct mg_str cert_data = mg_file_read(&mg_fs_posix, s_cert_path);
+        struct mg_str privkey_data = mg_file_read(&mg_fs_posix, s_key_path);
+        struct mg_tls_opts ops = { .cert = cert_data, .key = privkey_data };
+
+        mg_tls_init(c, &ops);
+
+        // free((void *) cert_data.ptr);
+        // free((void *) privkey_data.ptr);
     } else if (ev == MG_EV_TLS_HS) {
         MG_INFO(("TLS handshake done! Sending EHLO again"));
         mg_printf(c, "EHLO myname\r\n");
@@ -67,16 +71,6 @@ int main(int argc, char** argv) {
     char *create_data_dir = concat("mkdir -p ", s_base_dir);
     system(create_data_dir);
     free((void*) create_data_dir);
-    
-    printf("attempting to read tls files...\n");
-    struct mg_str cert_data = mg_file_read(&mg_fs_posix, s_cert_path);
-    struct mg_str privkey_data = mg_file_read(&mg_fs_posix, s_key_path);
-    tls_opts.cert = cert_data;
-    tls_opts.key = privkey_data;
-    tls_initialized = cert_data.len > 0 && privkey_data.len > 0;
-
-    printf("pk: %s\n", tls_opts.key.ptr);
-    printf("crt: %s\n", tls_opts.cert.ptr);
 
     if (unveil(s_base_dir, "rw") == -1) {
         err(1, "unveil");
@@ -98,7 +92,5 @@ int main(int argc, char** argv) {
     for (;;) mg_mgr_poll(&mgr, 1000); // inf loop
 
     mg_mgr_free(&mgr);
-    free((void *) cert_data.ptr);
-    free((void *) privkey_data.ptr);
     return 0;
 }
