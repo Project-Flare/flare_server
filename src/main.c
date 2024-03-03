@@ -16,46 +16,96 @@ static const char *s_base_dir = "./flare_data";
 static const char *s_cert_path = "./flare_data/cert.pem";
 static const char *s_key_path = "./flare_data/key.pem";
 
+static const char *s_tls_cert =
+    "-----BEGIN CERTIFICATE-----\n"
+    "MIIBhzCCASygAwIBAgIUbnMoVd8TtWH1T09dANkK2LU6IUswCgYIKoZIzj0EAwIw\n"
+    "RDELMAkGA1UEBhMCSUUxDzANBgNVBAcMBkR1YmxpbjEQMA4GA1UECgwHQ2VzYW50\n"
+    "YTESMBAGA1UEAwwJVGVzdCBSb290MB4XDTIwMDUwOTIxNTE0OVoXDTMwMDUwOTIx\n"
+    "NTE0OVowETEPMA0GA1UEAwwGc2VydmVyMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcD\n"
+    "QgAEkuBGnInDN6l06zVVQ1VcrOvH5FDu9MC6FwJc2e201P8hEpq0Q/SJS2nkbSuW\n"
+    "H/wBTTBaeXN2uhlBzMUWK790KKMvMC0wCQYDVR0TBAIwADALBgNVHQ8EBAMCA6gw\n"
+    "EwYDVR0lBAwwCgYIKwYBBQUHAwEwCgYIKoZIzj0EAwIDSQAwRgIhAPo6xx7LjCdZ\n"
+    "QY133XvLjAgVFrlucOZHONFVQuDXZsjwAiEAzHBNligA08c5U3SySYcnkhurGg50\n"
+    "BllCI0eYQ9ggp/o=\n"
+    "-----END CERTIFICATE-----\n";
+
+static const char *s_tls_key =
+    "-----BEGIN PRIVATE KEY-----\n"
+    "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQglNni0t9Dg9icgG8w\n"
+    "kbfxWSS+TuNgbtNybIQXcm3NHpmhRANCAASS4EacicM3qXTrNVVDVVys68fkUO70\n"
+    "wLoXAlzZ7bTU/yESmrRD9IlLaeRtK5Yf/AFNMFp5c3a6GUHMxRYrv3Qo\n"
+    "-----END PRIVATE KEY-----\n";
+
 static void fn(struct mg_connection *c, int ev, void *ev_data) {
-    if (ev == MG_EV_ACCEPT && mg_url_is_ssl(s_listen_on)) {
-        struct mg_str cert_data = mg_file_read(&mg_fs_posix, s_cert_path);
-        struct mg_str privkey_data = mg_file_read(&mg_fs_posix, s_key_path);
-        struct mg_tls_opts ops = { .cert = cert_data, .key = privkey_data };
-
-        mg_tls_init(c, &ops);
-
-        // free((void *) cert_data.ptr);
-        // free((void *) privkey_data.ptr);
-    } else if (ev == MG_EV_TLS_HS) {
-        MG_INFO(("TLS handshake done! Sending EHLO again"));
-        mg_printf(c, "EHLO myname\r\n");
-    } else if (ev == MG_EV_HTTP_MSG) {
-        mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "%s\n", "hello from flare");
+  if (ev == MG_EV_ACCEPT && c->fn_data != NULL) {
+    struct mg_tls_opts opts = {
+        .cert = mg_str(s_tls_cert),
+        .key = mg_str(s_tls_key)
+    };
+    mg_tls_init(c, &opts);
+  }
+  if (ev == MG_EV_HTTP_MSG) {
+    struct mg_http_message *hm = (struct mg_http_message *) ev_data;
+    if (mg_http_match_uri(hm, "/api/stats")) {
+      // Print some statistics about currently established connections
+      mg_printf(c, "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n");
+      mg_http_printf_chunk(c, "ID PROTO TYPE      LOCAL           REMOTE\n");
+      for (struct mg_connection *t = c->mgr->conns; t != NULL; t = t->next) {
+        mg_http_printf_chunk(c, "%-3lu %4s %s %M %M\n", t->id,
+                             t->is_udp ? "UDP" : "TCP",
+                             t->is_listening  ? "LISTENING"
+                             : t->is_accepted ? "ACCEPTED "
+                                              : "CONNECTED",
+                             mg_print_ip, &t->loc, mg_print_ip, &t->rem);
+      }
+      mg_http_printf_chunk(c, "");  // Don't forget the last empty chunk
+    } else if (mg_http_match_uri(hm, "/api/f2/*")) {
+      mg_http_reply(c, 200, "", "{\"result\": \"%.*s\"}\n", (int) hm->uri.len,
+                    hm->uri.ptr);
     }
-
-    // if (ev == MG_EV_OPEN) {
-    //     printf("open conn.");
-    // } else if (ev == MG_EV_READ) {
-    // }
-    
-    // if (ev == MG_EV_HTTP_MSG) {
-    //     struct mg_http_message *hm = (struct mg_http_message *) ev_data;
-    //     if (mg_http_match_uri(hm, "/ws")) {
-    //         mg_ws_upgrade(c, hm, NULL);
-    //     } else if (mg_http_match_uri(hm, "/test")) {
-    //         struct mg_http_serve_opts opts = {
-    //             .mime_types = "html=text/html",
-    //         };
-    //         mg_http_serve_file(c, ev_data, "./flare_data/test.html", &opts);
-    //     } else {
-    //         mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "%s\n", "hello from flare");
-    //     }
-    // } else if (ev == MG_EV_WS_MSG) {
-    //     // got websocket frame, rec data in wm->data. echo.
-    //     struct mg_ws_message *wm = (struct mg_ws_message *) ev_data;
-    //     mg_ws_send(c, wm->data.ptr, wm->data.len, WEBSOCKET_OP_TEXT);
-    // }
+  }
 }
+
+// static void fn(struct mg_connection *c, int ev, void *ev_data) {
+//     if (ev == MG_EV_ACCEPT && mg_url_is_ssl(s_listen_on)) {
+//         struct mg_str cert_data = mg_file_read(&mg_fs_posix, s_cert_path);
+//         struct mg_str privkey_data = mg_file_read(&mg_fs_posix, s_key_path);
+//         struct mg_tls_opts ops = { .cert = cert_data, .key = privkey_data };
+
+//         mg_tls_init(c, &ops);
+
+//         // free((void *) cert_data.ptr);
+//         // free((void *) privkey_data.ptr);
+//     } else if (ev == MG_EV_TLS_HS) {
+//         MG_INFO(("TLS handshake done! Sending EHLO again"));
+//         mg_printf(c, "EHLO myname\r\n");
+//     } else if (ev == MG_EV_HTTP_MSG) {
+//         mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "%s\n", "hello from flare");
+//     }
+
+//     // if (ev == MG_EV_OPEN) {
+//     //     printf("open conn.");
+//     // } else if (ev == MG_EV_READ) {
+//     // }
+    
+//     // if (ev == MG_EV_HTTP_MSG) {
+//     //     struct mg_http_message *hm = (struct mg_http_message *) ev_data;
+//     //     if (mg_http_match_uri(hm, "/ws")) {
+//     //         mg_ws_upgrade(c, hm, NULL);
+//     //     } else if (mg_http_match_uri(hm, "/test")) {
+//     //         struct mg_http_serve_opts opts = {
+//     //             .mime_types = "html=text/html",
+//     //         };
+//     //         mg_http_serve_file(c, ev_data, "./flare_data/test.html", &opts);
+//     //     } else {
+//     //         mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "%s\n", "hello from flare");
+//     //     }
+//     // } else if (ev == MG_EV_WS_MSG) {
+//     //     // got websocket frame, rec data in wm->data. echo.
+//     //     struct mg_ws_message *wm = (struct mg_ws_message *) ev_data;
+//     //     mg_ws_send(c, wm->data.ptr, wm->data.len, WEBSOCKET_OP_TEXT);
+//     // }
+// }
 
 char* concat(const char *str_1, const char *str_2)
 {
