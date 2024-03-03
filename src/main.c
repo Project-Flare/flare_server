@@ -12,9 +12,11 @@ int pledge(const char *promises, const char *execpromises);
 int unveil(const char *path, const char *permissions);
 
 static const char *s_listen_on = "ws://0.0.0.0:8000";
-static const char *s_data_dir = "./flare_server_data";
-static const char *s_cert_path = "./certs/server_cert.pem";
-static const char *s_key_path = "./certs/server_key.pem";
+
+static const char *s_base_dir = "~/.flare";
+static const char *s_data_dir = "~/.flare/data";
+static const char *s_cert_path = "~/.flare/server_cert.pem";
+static const char *s_key_path = "~/.flare/server_key.pem";
 
 struct mg_tls_opts tls_opts;
 bool tls_initialized = false;
@@ -65,11 +67,21 @@ void mkdir_err() {
 }
 
 int main(int argc, char** argv) {
-    errno = 0;
-    int mkdir_res = mkdir(s_data_dir, 600);
-    if (mkdir_res != 0)
-        mkdir_err();
+    // attempt to create the base dir if not found
+    if (access(s_base_dir, R_OK) != 0) {
+        errno = 0;
+        int mkdir_res = mkdir(s_base_dir, 600);
+        if (mkdir_res != 0)
+            mkdir_err();
+    }
 
+    // attempt to create the data dir if not found
+    if (access(s_data_dir, R_OK) != 0) {
+        errno = 0;
+        int mkdir_res = mkdir(s_data_dir, 600);
+        if (mkdir_res != 0)
+            mkdir_err();
+    }
     
     struct mg_str cert_data = mg_file_read(&mg_fs_posix, s_cert_path);
     struct mg_str privkey_data = mg_file_read(&mg_fs_posix, s_cert_path);
