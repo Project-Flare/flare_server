@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -44,45 +43,22 @@ static void fn(struct mg_connection *c, int ev, void *ev_data) {
     }
 }
 
-void mkdir_err() {
-    switch (errno) {
-        case 0: break;
-        case EEXIST: {
-            printf("skipping data dir mkdir\n");
-            break;
-        };
-        case EACCES: {
-            err(1, "err in mkdir data dir: insufficient permissions");
-        };
-        case EROFS: {
-            err(1, "err in mkdir data dir: readonly fs");
-        };
-        case ENOSPC: {
-            err(1, "err in mkdir data dir: insufficient space");
-        };
-        default: {
-            err(1, "err in mkdir data dir: unknown");
-        };
-    }
+char* concat(const char *str_1, const char *str_2)
+{
+    char *r = malloc(strlen(str_1) + strlen(str_2) + 1); // nt
+
+    strcpy(r, str_1);
+    strcat(r, str_2);
+    return r;
 }
 
 int main(int argc, char** argv) {
-    // attempt to create the base dir if not found
-    if (access(s_base_dir, R_OK) != 0) {
-        errno = 0;
-        int mkdir_res = mkdir(s_base_dir, 600);
-        if (mkdir_res != 0)
-            mkdir_err();
-    }
-
-    // attempt to create the data dir if not found
-    if (access(s_data_dir, R_OK) != 0) {
-        errno = 0;
-        int mkdir_res = mkdir(s_data_dir, 600);
-        if (mkdir_res != 0)
-            mkdir_err();
-    }
+    // attempt to create the dirs if not found
+    system(
+        concat("mkdir -p ", s_data_dir)
+    );
     
+    printf("attempting to read tls files...\n");
     struct mg_str cert_data = mg_file_read(&mg_fs_posix, s_cert_path);
     struct mg_str privkey_data = mg_file_read(&mg_fs_posix, s_cert_path);
     tls_opts.cert = cert_data;
