@@ -13,8 +13,8 @@ int unveil(const char *path, const char *permissions);
 static const char *s_listen_on = "ws://0.0.0.0:8000";
 
 static const char *s_base_dir = "./flare_data";
-static const char *s_cert_path = "./flare_data/server_cert.pem";
-static const char *s_key_path = "./flare_data/server_key.pem";
+static const char *s_cert_path = "./flare_data/cert.pem";
+static const char *s_key_path = "./flare_data/key.pem";
 
 struct mg_tls_opts tls_opts;
 bool tls_initialized = false;
@@ -59,10 +59,13 @@ int main(int argc, char** argv) {
     
     printf("attempting to read tls files...\n");
     struct mg_str cert_data = mg_file_read(&mg_fs_posix, s_cert_path);
-    struct mg_str privkey_data = mg_file_read(&mg_fs_posix, s_cert_path);
+    struct mg_str privkey_data = mg_file_read(&mg_fs_posix, s_key_path);
     tls_opts.cert = cert_data;
     tls_opts.key = privkey_data;
     tls_initialized = cert_data.len > 0 && privkey_data.len > 0;
+
+    printf("pk: %s\n", privkey_data.ptr);
+    printf("crt: %s\n", privkey_data.ptr);
 
     if (unveil(s_base_dir, "rw") == -1) {
         err(1, "unveil");
