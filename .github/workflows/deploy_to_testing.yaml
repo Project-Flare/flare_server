@@ -2,9 +2,10 @@ name: Build and deploy to test server
 
 on: [push]
 jobs:
-  Build-Deploy-Testing:
+  upload-build-deploy:
     runs-on: ubuntu-latest
     steps:
+
       - name: Create SSH key
         shell: bash
         env:
@@ -16,14 +17,16 @@ jobs:
           sudo chmod u=r,g=,o= /home/runner/.ssh/id_ed25519
           ssh-keygen -yf /home/runner/.ssh/id_ed25519
           ssh-keyscan $SSH_HOST > /home/runner/.ssh/known_hosts
+
       - name: Checkout repo
         uses: actions/checkout@v2
-        with:
+
       - name: Upload
         env:
           SSH_HOST: ${{secrets.OPENBSD_7_4_TESTING_HOST}}
         run: |
           rsync -r -e "ssh -i /home/runner/.ssh/id_ed25519" ${{github.workspace}} testing@${{ secrets.OPENBSD_7_4_TESTING_HOST }}:~/
+
       - name: Run
         uses: appleboy/ssh-action@v1.0.3
         with:
