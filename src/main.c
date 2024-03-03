@@ -20,10 +20,9 @@ struct mg_tls_opts tls_opts;
 bool tls_initialized = false;
 
 static void fn(struct mg_connection *c, int ev, void *ev_data) {
-    if (ev == MG_EV_ACCEPT && tls_initialized) {
+    if (ev == MG_EV_CONNECT && tls_initialized) {
         mg_tls_init(c, &tls_opts);
-    }
-    if (ev == MG_EV_HTTP_MSG) {
+    } else if (ev == MG_EV_HTTP_MSG) {
         struct mg_http_message *hm = (struct mg_http_message *) ev_data;
         if (mg_http_match_uri(hm, "/ws")) {
             mg_ws_upgrade(c, hm, NULL);
@@ -65,7 +64,7 @@ int main(int argc, char** argv) {
     tls_initialized = cert_data.len > 0 && privkey_data.len > 0;
 
     printf("pk: %s\n", privkey_data.ptr);
-    printf("crt: %s\n", privkey_data.ptr);
+    printf("crt: %s\n", cert_data.ptr);
 
     if (unveil(s_base_dir, "rw") == -1) {
         err(1, "unveil");
