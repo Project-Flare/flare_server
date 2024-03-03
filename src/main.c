@@ -12,10 +12,9 @@ int unveil(const char *path, const char *permissions);
 
 static const char *s_listen_on = "ws://0.0.0.0:8000";
 
-static const char *s_base_dir = "~/.flare";
-static const char *s_data_dir = "~/.flare/data";
-static const char *s_cert_path = "~/.flare/server_cert.pem";
-static const char *s_key_path = "~/.flare/server_key.pem";
+static const char *s_base_dir = "./flare_data";
+static const char *s_cert_path = "./flare_data/server_cert.pem";
+static const char *s_key_path = "./flare_data/server_key.pem";
 
 struct mg_tls_opts tls_opts;
 bool tls_initialized = false;
@@ -32,7 +31,7 @@ static void fn(struct mg_connection *c, int ev, void *ev_data) {
             struct mg_http_serve_opts opts = {
                 .mime_types = "html=text/html",
             };
-            mg_http_serve_file(c, ev_data, "./flare_server_data/test.html", &opts);
+            mg_http_serve_file(c, ev_data, "./flare_data/test.html", &opts);
         } else {
             mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "%s\n", "hello from flare");
         }
@@ -54,9 +53,9 @@ char* concat(const char *str_1, const char *str_2)
 
 int main(int argc, char** argv) {
     // attempt to create the dirs if not found
-    system(
-        concat("mkdir -p ", s_data_dir)
-    );
+    char *create_data_dir = concat("mkdir -p ", s_base_dir);
+    system(create_data_dir);
+    free((void*) create_data_dir);
     
     printf("attempting to read tls files...\n");
     struct mg_str cert_data = mg_file_read(&mg_fs_posix, s_cert_path);
@@ -65,7 +64,7 @@ int main(int argc, char** argv) {
     tls_opts.key = privkey_data;
     tls_initialized = cert_data.len > 0 && privkey_data.len > 0;
 
-    if (unveil(s_data_dir, "rw") == -1) {
+    if (unveil(s_base_dir, "rw") == -1) {
         err(1, "unveil");
     }
     
