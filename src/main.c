@@ -1,4 +1,6 @@
 #include <errno.h>
+#include <fcntl.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -11,8 +13,16 @@ int unveil(const char *path, const char *permissions);
 
 static const char *s_listen_on = "ws://0.0.0.0:8000";
 static const char *s_data_dir = "./flare_server_data";
+static const char *s_cert_path = "./certs/server_cert.pem";
+static const char *s_key_path = "./certs/server_key.pem";
+
+struct mg_tls_opts tls_opts;
+bool tls_initialized = false;
 
 static void fn(struct mg_connection *c, int ev, void *ev_data) {
+    if (ev == MG_EV_ACCEPT && tls_initialized) {
+        mg_tls_init(c, &tls_opts);
+    }
     if (ev == MG_EV_HTTP_MSG) {
         struct mg_http_message *hm = (struct mg_http_message *) ev_data;
         if (mg_http_match_uri(hm, "/ws")) {
@@ -60,6 +70,13 @@ int main(int argc, char** argv) {
     if (mkdir_res != 0)
         mkdir_err();
 
+    
+    struct mg_str cert_data = mg_file_read(&mg_fs_posix, s_cert_path);
+    struct mg_str privkey_data = mg_file_read(&mg_fs_posix, s_cert_path);
+    tls_opts.cert = cert_data;
+    tls_opts.key = privkey_data;
+    tls_initialized = cert_data.len > 0 && privkey_data.len > 0;
+
     if (unveil(s_data_dir, "rw") == -1) {
         err(1, "unveil");
     }
@@ -71,11 +88,18 @@ int main(int argc, char** argv) {
     struct mg_mgr mgr;  // event mgr
     mg_mgr_init(&mgr);  // init event mgr
 
-    printf("Starting WS listener");
+    printf("starting listener...");
 
     mg_http_listen(&mgr, s_listen_on, fn, NULL);  // http listener bound to fn
+
+    if (pledge("stdio rpath", NULL) == -1) {
+        err(1,"pledge");
+    }
+
     for (;;) mg_mgr_poll(&mgr, 1000); // inf loop
 
     mg_mgr_free(&mgr);
+    free((void *) cert_data.ptr);
+    free((void *) privkey_data.ptr);
     return 0;
 }

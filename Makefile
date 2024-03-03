@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = -target amd64-unknown-openbsd7.4 -march=native
+CFLAGS = -march=native -O3 -g -fsanitize=address -fno-omit-frame-pointer -DMG_TLS=MG_TLS_OPENSSL -lssl -lcrypto
 
 flare_server:
 	$(CC) $(CFLAGS) src/main.c src/mongoose.c -o target/flare_server
