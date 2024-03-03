@@ -1,3 +1,6 @@
+#include <asm-generic/errno-base.h>
+#include <errno.h>
+#include <stdio.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <err.h>
@@ -26,11 +29,34 @@ static void fn(struct mg_connection *c, int ev, void *ev_data) {
     }
 }
 
-int main(int argc, char** argv) {
-    if (mkdir(s_data_dir, 600) == -1) {
-        err(1, "mkdir");
+void mkdir_err() {
+    switch (errno) {
+        case 0: break;
+        case EEXIST: {
+            printf("skipping data dir mkdir\n");
+            break;
+        };
+        case EACCES: {
+            err(1, "err in mkdir data dir: insufficient permissions");
+        };
+        case EROFS: {
+            err(1, "err in mkdir data dir: readonly fs");
+        };
+        case ENOSPC: {
+            err(1, "err in mkdir data dir: insufficient space");
+        };
+        default: {
+            err(1, "err in mkdir data dir: unknown");
+        };
     }
+}
 
+int main(int argc, char** argv) {
+    errno = 0;
+    int mkdir_res = mkdir(s_data_dir, 600);
+    if (mkdir_res != 0)
+        mkdir_err();
+    
     if (pledge("stdio inet", NULL) == -1) {
         err(1,"pledge");
     }
