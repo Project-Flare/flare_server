@@ -16,12 +16,12 @@ static const char *s_base_dir = "./flare_data";
 static const char *s_cert_path = "./flare_data/cert.pem";
 static const char *s_key_path = "./flare_data/key.pem";
 
-struct mg_tls_opts opts;
 
 static void fn(struct mg_connection *c, int ev, void *ev_data) {
   if (ev == MG_EV_ACCEPT && c->fn_data != NULL) {
-    printf("pkey: \n%s\n", opts.key.ptr);
-    printf("cert: \n%s\n", opts.cert.ptr);
+    struct mg_str cert = mg_file_read(&mg_fs_posix, s_cert_path);
+    struct mg_str key = mg_file_read(&mg_fs_posix, s_key_path);
+    struct mg_tls_opts opts = { .key = key, .cert = cert };
     mg_tls_init(c, &opts);
   }
   if (ev == MG_EV_HTTP_MSG) {
@@ -109,12 +109,6 @@ int main(int argc, char** argv) {
     if (pledge("stdio inet rpath", NULL) == -1) {
         err(1,"pledge");
     }
-
-    printf("attempting to read tls key and cert\n");
-    struct mg_str cert = mg_file_read(&mg_fs_posix, s_cert_path);
-    struct mg_str key = mg_file_read(&mg_fs_posix, s_key_path);
-    opts.key = key;
-    opts.cert = cert;
 
     struct mg_mgr mgr;  // event mgr
 
