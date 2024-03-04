@@ -35,8 +35,7 @@ static void fn(struct mg_connection *c, int ev, void *ev_data) {
     }
 }
 
-char* concat(const char *str_1, const char *str_2)
-{
+char* concat(const char *str_1, const char *str_2) {
     char *r = malloc(strlen(str_1) + strlen(str_2) + 1); // nt
 
     strcpy(r, str_1);
