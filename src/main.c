@@ -10,7 +10,7 @@
 int pledge(const char *promises, const char *execpromises);
 int unveil(const char *path, const char *permissions);
 
-static const char *s_listen_on = "https://0.0.0.0:8443";
+static const char *s_listen_on = "http://0.0.0.0:8443";
 
 static const char *s_base_dir = "./flare_data";
 static const char *s_cert_path = "./flare_data/cert.pem";
@@ -45,23 +45,20 @@ char* concat(const char *str_1, const char *str_2)
 }
 
 int main(int argc, char** argv) {
-    // attempt to create the dirs if not found
-    char *create_data_dir = concat("mkdir -p ", s_base_dir);
-    system(create_data_dir);
-    free((void*) create_data_dir);
-
-    if (unveil(s_base_dir, "rw") == -1) {
+    if (unveil(s_base_dir, "r") == -1) {
         err(1, "unveil");
+    }
+
+    if (unveil(NULL, NULL) == -1) {
+        err(1,"unveil seal");
     }
     
     if (pledge("stdio inet rpath", NULL) == -1) {
         err(1,"pledge");
     }
 
-    struct mg_str certm = mg_file_read(&mg_fs_posix, s_cert_path);
-    struct mg_str keym = mg_file_read(&mg_fs_posix, s_key_path);
-    opts.cert = certm;
-    opts.key = keym;
+    opts.cert = mg_file_read(&mg_fs_posix, s_cert_path);
+    opts.key = mg_file_read(&mg_fs_posix, s_key_path);
 
     struct mg_mgr mgr;  // event mgr
 
