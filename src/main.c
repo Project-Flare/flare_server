@@ -23,7 +23,11 @@ static void fn(struct mg_connection *c, int ev, void *ev_data) {
         mg_tls_init(c, &opts);
     } else if (ev == MG_EV_HTTP_MSG) {
         struct mg_http_message *hm = (struct mg_http_message *) ev_data;
-        mg_ws_upgrade(c, hm, NULL);
+        if (mg_http_match_uri(hm, "/info")) {
+            mg_http_reply(c, 200, "", "%s\n", "all ok: flare_server");
+        } else {
+            mg_ws_upgrade(c, hm, NULL);
+        }
     } else if (ev == MG_EV_WS_MSG) {
         // got websocket frame, rec data in wm->data. echo.
         struct mg_ws_message *wm = (struct mg_ws_message *) ev_data;
@@ -54,7 +58,6 @@ int main(int argc, char** argv) {
         err(1,"pledge");
     }
 
-    
     struct mg_str certm = mg_file_read(&mg_fs_posix, s_cert_path);
     struct mg_str keym = mg_file_read(&mg_fs_posix, s_key_path);
     opts.cert = certm;
